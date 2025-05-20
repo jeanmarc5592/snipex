@@ -22,8 +22,6 @@ defmodule Snipex.MixProject do
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
-    [
-      {:ecto_sqlite3, "~> 0.17"}
-    ]
+    []
   end
 end

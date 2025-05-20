@@ -7,9 +7,7 @@ defmodule Snipex.Application do
 
   @impl true
   def start(_type, _args) do
-    children = [
-      Snipex.Repo
-    ]
+    children = []
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
