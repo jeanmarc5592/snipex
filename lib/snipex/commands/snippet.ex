@@ -1,7 +1,8 @@
 defmodule Snipex.Commands.Snippet do
-  def handle(["add" | _opts]) do
-    IO.puts("ADD NEW SNIPPET")
-  end
+  alias Snipex.Storage
+  alias Snipex.Utils.UserInput, as: UserInput
+
+  def handle(["add" | opts]), do: add_snippet(opts)
 
   def handle(["edit" | _opts]) do
     IO.puts("EDIT SNIPPET")
@@ -25,5 +26,18 @@ defmodule Snipex.Commands.Snippet do
 
   def handle(["search" | _query]) do
     IO.puts("FUZZY SEARCH BY QUERY")
+  end
+
+  defp add_snippet(opts) do
+    {:ok, data} = UserInput.validate_switches(opts, name: :string, code: :string)
+
+    result =
+      data
+      |> Map.new()
+      |> Storage.insert(:snippets)
+
+    case result do
+      {:ok, _new_snippet} -> IO.puts("✅ Snippet successfully saved!")
+    end
   end
 end
