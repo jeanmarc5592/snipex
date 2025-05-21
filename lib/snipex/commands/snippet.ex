@@ -16,9 +16,7 @@ defmodule Snipex.Commands.Snippet do
     IO.puts("COPY SNIPPET TO CLIPBOARD")
   end
 
-  def handle(["list" | _opts]) do
-    IO.puts("LIST SNIPPETS")
-  end
+  def handle(["list"]), do: list_snippets()
 
   def handle(["show" | _id_or_name]) do
     IO.puts("SHOW DETAILS OF A SNIPPET")
@@ -39,5 +37,10 @@ defmodule Snipex.Commands.Snippet do
     case result do
       {:ok, _new_snippet} -> IO.puts("✅ Snippet successfully saved!")
     end
+  end
+
+  defp list_snippets() do
+    {:ok, snippets} = Storage.list_all(:snippets)
+    IO.inspect(snippets, label: "Snippets")
   end
 end

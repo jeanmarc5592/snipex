@@ -26,6 +26,13 @@ defmodule Snipex.Storage do
     |> insert_data(@snippets_path, Snipex.Snippet)
   end
 
+  def list_all(:snippets), do: list_all_data(@snippets_path)
+
+  defp list_all_data(file) do
+    {:ok, content} = FS.read_file(file)
+    Jason.decode(content)
+  end
+
   defp insert_data(new_data, file, target_struct) do
     {:ok, content} = FS.read_file(file)
     {:ok, decoded_content} = Jason.decode(content)
