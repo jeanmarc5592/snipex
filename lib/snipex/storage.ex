@@ -1,6 +1,8 @@
 defmodule Snipex.Storage do
   alias Snipex.Utils.FileSystem, as: FS
 
+  # TODO: Control via .env
+  # @base_path Path.join(System.user_home!(), ".snipex")
   @base_path Path.expand("../../data", __DIR__)
   @snippets_path Path.join(@base_path, "snippets.json")
   @storage_paths [
