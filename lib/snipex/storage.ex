@@ -1,7 +1,23 @@
 defmodule Snipex.Storage do
   alias Snipex.Utils.FileSystem, as: FS
 
-  @snippets_path Path.expand("../../data/snippets.json", __DIR__)
+  @base_path Path.expand("../../data", __DIR__)
+  @snippets_path Path.join(@base_path, "snippets.json")
+  @storage_paths [
+    snippets: @snippets_path
+  ]
+
+  def init() do
+    File.mkdir_p!(@base_path)
+
+    Enum.each(@storage_paths, fn {_, path} ->
+      if !File.exists?(path), do: File.write!(path, "[]")
+    end)
+
+    IO.puts("✅ Initialized snipex data storage.")
+
+    :ok
+  end
 
   def insert(%{name: name, code: code}, :snippets) do
     %Snipex.Snippet{id: UUID.uuid4(), name: name, code: code}

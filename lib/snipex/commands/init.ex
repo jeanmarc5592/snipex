@@ -1,15 +1,9 @@
 defmodule Snipex.Commands.Init do
-  alias Snipex.Defaults
+  alias Snipex.Storage
 
-  def handle() do
-    File.mkdir_p!(Path.expand("../../../data", __DIR__))
+  def handle(), do: initialize()
 
-    Enum.each(Defaults.storage_paths(), fn {_, path} ->
-      if !File.exists?(path), do: File.write!(path, "[]")
-    end)
-
-    IO.puts("✅ Initialized snipex data storage.")
-
-    :ok
+  defp initialize() do
+    Storage.init()
   end
 end
