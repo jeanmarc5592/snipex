@@ -3,9 +3,11 @@ defmodule Snipex do
   Documentation for `Snipex`.
   """
   alias Snipex.Commands.Snippet, as: Snippet
+  alias Snipex.Commands.Init, as: Init
 
   def main(args) do
     case args do
+      ["init"] -> Init.handle()
       ["snippet" | rest] -> Snippet.handle(rest)
       _ -> "Snipex CLI"
     end
