@@ -41,6 +41,17 @@ defmodule Snipex.Commands.Snippet do
 
   defp list_snippets() do
     {:ok, snippets} = Storage.list_all(:snippets)
-    IO.inspect(snippets, label: "Snippets")
+
+    total_length = length(snippets)
+
+    IO.puts("\nID                                   | NAME")
+    IO.puts(String.duplicate("-", 80))
+
+    snippets
+    |> Enum.with_index()
+    |> Enum.each(fn {%{"id" => id, "name" => name, "code" => _}, index} ->
+      IO.puts("#{id} | #{String.pad_trailing(name, 14)}")
+      if index < total_length - 1, do: IO.puts(String.duplicate("-", 80))
+    end)
   end
 end
