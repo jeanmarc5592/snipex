@@ -1,6 +1,4 @@
 defmodule Snipex.Storage do
-  alias Snipex.Utils.FileSystem, as: FS
-
   # TODO: Control via .env
   # @base_path Path.join(System.user_home!(), ".snipex")
   @base_path Path.expand("../../data", __DIR__)
@@ -29,13 +27,16 @@ defmodule Snipex.Storage do
   def list_all(:snippets), do: list_all_data(@snippets_path)
 
   defp list_all_data(file) do
-    {:ok, content} = FS.read_file(file)
-    Jason.decode(content)
+    file
+    |> File.read!()
+    |> Jason.decode!()
   end
 
   defp insert_data(new_data, file, target_struct) do
-    {:ok, content} = FS.read_file(file)
-    {:ok, decoded_content} = Jason.decode(content)
+    decoded_content =
+      file
+      |> File.read!()
+      |> Jason.decode!()
 
     existing_data =
       Enum.map(decoded_content, fn item -> struct(target_struct, atomize_keys(item)) end)
@@ -43,7 +44,7 @@ defmodule Snipex.Storage do
     case find_duplicates(existing_data, "name", new_data) do
       {:ok, _} ->
         json = Jason.encode!([new_data | existing_data], pretty: true)
-        FS.write_file(file, json)
+        File.write!(file, json)
         {:ok, new_data}
 
       {:error, reason} ->

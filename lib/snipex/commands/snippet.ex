@@ -42,8 +42,7 @@ defmodule Snipex.Commands.Snippet do
   end
 
   defp list_snippets() do
-    {:ok, snippets} = Storage.list_all(:snippets)
-
+    snippets = Storage.list_all(:snippets)
     total_length = length(snippets)
 
     IO.puts("\nID                                   | NAME")
