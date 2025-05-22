@@ -31,11 +31,14 @@ defmodule Snipex.Commands.Snippet do
   end
 
   defp add_snippet(opts) do
-    with {:ok, data} <- UserInput.validate_switches(opts, name: :string, code: :string),
+    required_switches = [name: :string, code: :string]
+
+    with {:ok, data} <- UserInput.validate_switches(opts, required: required_switches),
          {:ok, _snippet} <- Storage.insert(Map.new(data), :snippets) do
       IO.puts("✅ Snippet successfully saved!")
     else
       {:error, :unallowed_switches} -> :error
+      {:error, :missing_required_switches} -> :error
       {:error, :duplicate_content} -> :error
     end
   end
