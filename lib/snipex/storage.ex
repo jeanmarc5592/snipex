@@ -33,13 +33,11 @@ defmodule Snipex.Storage do
   end
 
   defp insert_data(new_data, file, target_struct) do
-    decoded_content =
+    existing_data =
       file
       |> File.read!()
       |> Jason.decode!()
-
-    existing_data =
-      Enum.map(decoded_content, fn item -> struct(target_struct, atomize_keys(item)) end)
+      |> Enum.map(fn item -> struct(target_struct, atomize_keys(item)) end)
 
     case find_duplicates(existing_data, "name", new_data) do
       {:ok, _} ->
