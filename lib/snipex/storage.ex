@@ -26,6 +26,8 @@ defmodule Snipex.Storage do
 
   def list_all(:snippets), do: list_all_data(@snippets_path)
 
+  def delete_by_id(:snippets, id), do: delete_data_by_id(@snippets_path, id)
+
   defp list_all_data(file) do
     file
     |> File.read!()
@@ -47,6 +49,25 @@ defmodule Snipex.Storage do
 
       {:error, reason} ->
         {:error, reason}
+    end
+  end
+
+  defp delete_data_by_id(file, id) do
+    existing_data =
+      file
+      |> File.read!()
+      |> Jason.decode!()
+
+    # Returns tuple with two lists (left: where the case is true, right: where the case is false)
+    case Enum.split_with(existing_data, fn item -> item["id"] != id end) do
+      # If there is a match, it will be in the right list (only one because id's are unique)
+      {filtered, [deleted]} ->
+        File.write!(file, Jason.encode!(filtered, pretty: true))
+        {:ok, deleted}
+
+      # When right list is empty, the item with the id doesn't exist
+      {_, []} ->
+        {:error, :not_found}
     end
   end
 

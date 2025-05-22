@@ -8,8 +8,12 @@ defmodule Snipex.Commands.Snippet do
     IO.puts("EDIT SNIPPET")
   end
 
-  def handle(["delete" | _id_or_name]) do
-    IO.puts("DELETE SNIPPET")
+  def handle(["delete" | [id]]) do
+    if valid_uuid?(id) do
+      delete_snippet(id)
+    else
+      IO.puts("❌ Invalid UUID.")
+    end
   end
 
   def handle(["copy" | _id_or_name]) do
@@ -49,5 +53,17 @@ defmodule Snipex.Commands.Snippet do
       IO.puts("#{id} | #{String.pad_trailing(name, 14)}")
       if index < total_length - 1, do: IO.puts(String.duplicate("-", 80))
     end)
+  end
+
+  defp delete_snippet(id) do
+    case Storage.delete_by_id(:snippets, id) do
+      {:ok, _} -> IO.puts("✅ Item with id '#{id}' succesfully deleted.")
+      {:error, :not_found} -> IO.puts("❌ Item with id '#{id}' couldn't be deleted. Not found")
+    end
+  end
+
+  defp valid_uuid?(id) do
+    uuid_regex = ~r/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    Regex.match?(uuid_regex, id)
   end
 end
