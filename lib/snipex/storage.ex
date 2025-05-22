@@ -24,6 +24,8 @@ defmodule Snipex.Storage do
     |> insert_data(@snippets_path, Snipex.Snippet)
   end
 
+  def edit(id, updates, :snippets), do: edit_data(id, updates, @snippets_path)
+
   def list_all(:snippets), do: list_all_data(@snippets_path)
 
   def delete_by_id(:snippets, id), do: delete_data_by_id(@snippets_path, id)
@@ -49,6 +51,30 @@ defmodule Snipex.Storage do
 
       {:error, reason} ->
         {:error, reason}
+    end
+  end
+
+  defp edit_data(id, updates, file) do
+    existing_data =
+      file
+      |> File.read!()
+      |> Jason.decode!()
+      |> Enum.map(fn item -> atomize_keys(item) end)
+
+    case Enum.find_index(existing_data, fn item -> item.id == id end) do
+      nil ->
+        IO.puts("❌ Item with id '#{id}' doesn't exist.")
+        {:error, :not_found}
+
+      index ->
+        original_item = Enum.at(existing_data, index)
+        updated_item = Map.merge(original_item, Map.new(updates))
+        updated_list = List.replace_at(existing_data, index, updated_item)
+
+        json = Jason.encode!(updated_list, pretty: true)
+        File.write!(file, json)
+
+        {:ok, updated_item}
     end
   end
 
@@ -86,10 +112,7 @@ defmodule Snipex.Storage do
         {:ok, item_to_insert}
 
       _ ->
-        IO.puts(
-          "❌ Snippet with the #{key} '#{Map.get(item_to_insert, atom_key)}' already exists."
-        )
-
+        IO.puts("❌ Item with the #{key} '#{Map.get(item_to_insert, atom_key)}' already exists.")
         {:error, :duplicate_content}
     end
   end

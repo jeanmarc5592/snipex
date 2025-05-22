@@ -4,9 +4,7 @@ defmodule Snipex.Commands.Snippet do
 
   def handle(["add" | opts]), do: add_snippet(opts)
 
-  def handle(["edit" | _opts]) do
-    IO.puts("EDIT SNIPPET")
-  end
+  def handle(["edit" | opts]), do: edit_snippet(opts)
 
   def handle(["delete" | [id]]) do
     if valid_uuid?(id) do
@@ -40,6 +38,19 @@ defmodule Snipex.Commands.Snippet do
       {:error, :unallowed_switches} -> :error
       {:error, :missing_required_switches} -> :error
       {:error, :duplicate_content} -> :error
+    end
+  end
+
+  def edit_snippet([id | opts]) do
+    optional_switches = [name: :string, code: :string]
+
+    with {:ok, updates} <- UserInput.validate_switches(opts, optional: optional_switches),
+         {:ok, _snippet} <- Storage.edit(id, updates, :snippets) do
+      IO.puts("✅ Snipet successfully edited!")
+    else
+      {:error, :unallowed_switches} -> :error
+      {:error, :missing_required_switches} -> :error
+      {:error, :not_found} -> :error
     end
   end
 
