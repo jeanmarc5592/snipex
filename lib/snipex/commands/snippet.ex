@@ -29,13 +29,15 @@ defmodule Snipex.Commands.Snippet do
   defp add_snippet(opts) do
     {:ok, data} = UserInput.validate_switches(opts, name: :string, code: :string)
 
-    result =
-      data
-      |> Map.new()
-      |> Storage.insert(:snippets)
+    data
+    |> Map.new()
+    |> Storage.insert(:snippets)
+    |> case do
+      {:ok, _snippet} ->
+        IO.puts("✅ Snippet successfully saved!")
 
-    case result do
-      {:ok, _new_snippet} -> IO.puts("✅ Snippet successfully saved!")
+      {:error, :duplicate_content} ->
+        :error
     end
   end
 

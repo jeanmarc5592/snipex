@@ -37,18 +37,40 @@ defmodule Snipex.Storage do
     {:ok, content} = FS.read_file(file)
     {:ok, decoded_content} = Jason.decode(content)
 
-    # TODO: Search for duplicated names?
-
     existing_data =
       Enum.map(decoded_content, fn item -> struct(target_struct, atomize_keys(item)) end)
 
-    json = Jason.encode!([new_data | existing_data], pretty: true)
+    case find_duplicates(existing_data, "name", new_data) do
+      {:ok, _} ->
+        json = Jason.encode!([new_data | existing_data], pretty: true)
+        FS.write_file(file, json)
+        {:ok, new_data}
 
-    FS.write_file(file, json)
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   defp atomize_keys(map) do
     Enum.map(map, fn {key, value} -> {String.to_atom(key), value} end)
     |> Enum.into(%{})
+  end
+
+  defp find_duplicates(data, key, item_to_insert) do
+    atom_key = String.to_existing_atom(key)
+
+    case Enum.find(data, fn item ->
+           Map.get(item, atom_key) == Map.get(item_to_insert, atom_key)
+         end) do
+      nil ->
+        {:ok, item_to_insert}
+
+      _ ->
+        IO.puts(
+          "❌ Snippet with the #{key} '#{Map.get(item_to_insert, atom_key)}' already exists."
+        )
+
+        {:error, :duplicate_content}
+    end
   end
 end
