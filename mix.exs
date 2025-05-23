@@ -24,7 +24,8 @@ defmodule Snipex.MixProject do
   defp deps do
     [
       {:jason, "~> 1.4"},
-      {:uuid, "~> 1.1.8"}
+      {:uuid, "~> 1.1.8"},
+      {:clipboard, "~> 0.2"}
     ]
   end
 end

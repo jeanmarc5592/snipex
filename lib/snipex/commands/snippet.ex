@@ -14,9 +14,7 @@ defmodule Snipex.Commands.Snippet do
     end
   end
 
-  def handle(["copy" | _id_or_name]) do
-    IO.puts("COPY SNIPPET TO CLIPBOARD")
-  end
+  def handle(["copy" | [id]]), do: copy_snippet(id)
 
   def handle(["list"]), do: list_snippets()
 
@@ -80,8 +78,19 @@ defmodule Snipex.Commands.Snippet do
 
   defp delete_snippet(id) do
     case Storage.delete_by_id(:snippets, id) do
-      {:ok, _} -> IO.puts("✅ Item with id '#{id}' succesfully deleted.")
+      {:ok, _} -> IO.puts("✅ Snippet with id '#{id}' succesfully deleted.")
       {:error, :not_found} -> IO.puts("❌ Item with id '#{id}' couldn't be deleted. Not found")
+    end
+  end
+
+  defp copy_snippet(id) do
+    case Storage.find_by_id(:snippets, id) do
+      {:ok, %{id: _, name: _, code: code}} ->
+        Clipboard.copy(code)
+        IO.puts("✅ Snippet with id '#{id}' copied to clipboard.")
+
+      {:error, :not_found} ->
+        :error
     end
   end
 
