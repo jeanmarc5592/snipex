@@ -20,9 +20,7 @@ defmodule Snipex.Commands.Snippet do
 
   def handle(["list"]), do: list_snippets()
 
-  def handle(["show" | _id_or_name]) do
-    IO.puts("SHOW DETAILS OF A SNIPPET")
-  end
+  def handle(["show" | [id]]), do: show_snippet(id)
 
   def handle(["search" | _query]) do
     IO.puts("FUZZY SEARCH BY QUERY")
@@ -67,6 +65,17 @@ defmodule Snipex.Commands.Snippet do
       IO.puts("#{id} | #{String.pad_trailing(name, 14)}")
       if index < total_length - 1, do: IO.puts(String.duplicate("-", 80))
     end)
+  end
+
+  defp show_snippet(id) do
+    case Storage.find_by_id(:snippets, id) do
+      {:ok, %{id: id, name: name, code: code}} ->
+        IO.puts("\"#{name}\" [#{id}]\n")
+        IO.puts("#{code}")
+
+      {:error, :not_found} ->
+        :error
+    end
   end
 
   defp delete_snippet(id) do

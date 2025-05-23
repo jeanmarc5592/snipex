@@ -28,12 +28,32 @@ defmodule Snipex.Storage do
 
   def list_all(:snippets), do: list_all_data(@snippets_path)
 
+  def find_by_id(:snippets, id), do: find_data_by_id(@snippets_path, id)
+
   def delete_by_id(:snippets, id), do: delete_data_by_id(@snippets_path, id)
 
   defp list_all_data(file) do
     file
     |> File.read!()
     |> Jason.decode!()
+  end
+
+  defp find_data_by_id(file, id) do
+    existing_data =
+      file
+      |> File.read!()
+      |> Jason.decode!()
+      |> Enum.map(fn item -> atomize_keys(item) end)
+
+    case Enum.find_index(existing_data, fn item -> item.id == id end) do
+      nil ->
+        IO.puts("❌ Item with id '#{id}' doesn't exist.")
+        {:error, :not_found}
+
+      index ->
+        item = Enum.at(existing_data, index)
+        {:ok, item}
+    end
   end
 
   defp insert_data(new_data, file, target_struct) do
