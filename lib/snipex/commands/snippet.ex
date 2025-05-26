@@ -19,7 +19,7 @@ defmodule Snipex.Commands.Snippet do
     * `copy <id>` – copies snippet code to clipboard
     * `list` – lists all snippets
     * `show <id>` – displays snippet details
-    * `search [--name]` – searches snippets by name
+    * `search --name` – searches snippets by name
   """
   def handle(args)
 
@@ -88,9 +88,9 @@ defmodule Snipex.Commands.Snippet do
 
   @doc false
   defp search_snippets(opts) do
-    optional_switches = [name: :string, code: :string]
+    required_switches = [name: :string, code: :string]
 
-    with {:ok, data} <- UserInput.validate_switches(opts, optional: optional_switches) do
+    with {:ok, data} <- UserInput.validate_switches(opts, required: required_switches) do
       cond do
         name = Keyword.get(data, :name) ->
           snippets = Storage.search_by_name(:snippets, name)
