@@ -1,6 +1,7 @@
 defmodule Snipex.Commands.Snippet do
   alias Snipex.Storage
   alias Snipex.Utils.UserInput, as: UserInput
+  alias Snipex.Printer
 
   def handle(["add" | opts]), do: add_snippet(opts)
 
@@ -50,17 +51,7 @@ defmodule Snipex.Commands.Snippet do
 
   defp list_snippets() do
     snippets = Storage.list_all(:snippets)
-    total_length = length(snippets)
-
-    IO.puts("\nID                                   | NAME")
-    IO.puts(String.duplicate("-", 80))
-
-    snippets
-    |> Enum.with_index()
-    |> Enum.each(fn {%{"id" => id, "name" => name, "code" => _}, index} ->
-      IO.puts("#{id} | #{String.pad_trailing(name, 14)}")
-      if index < total_length - 1, do: IO.puts(String.duplicate("-", 80))
-    end)
+    Printer.print_list(snippets, :snippets)
   end
 
   defp show_snippet(id) do
@@ -81,20 +72,7 @@ defmodule Snipex.Commands.Snippet do
       cond do
         name = Keyword.get(data, :name) ->
           snippets = Storage.search_by_name(:snippets, name)
-          total_length = length(snippets)
-
-          IO.puts("\nID                                   | NAME")
-          IO.puts(String.duplicate("-", 80))
-
-          snippets
-          |> Enum.with_index()
-          |> Enum.each(fn {%{"id" => id, "name" => name, "code" => _}, index} ->
-            IO.puts("#{id} | #{String.pad_trailing(name, 14)}")
-            if index < total_length - 1, do: IO.puts(String.duplicate("-", 80))
-          end)
-
-        code = Keyword.get(data, :code) ->
-          IO.puts("Search by snippet code: #{code}")
+          Printer.print_list(snippets, :snippets)
 
         true ->
           :ok
