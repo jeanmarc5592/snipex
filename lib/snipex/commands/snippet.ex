@@ -39,9 +39,10 @@ defmodule Snipex.Commands.Snippet do
   def handle(["edit" | [id | opts]]) do
     optional_switches = [name: :string, code: :string]
 
-    with {:ok, updates} <- UserInput.validate_switches(opts, optional: optional_switches),
+    with true <- UserInput.valid_uuid?(id),
+         {:ok, updates} <- UserInput.validate_switches(opts, optional: optional_switches),
          {:ok, _snippet} <- Storage.edit(id, updates, :snippets) do
-      IO.puts("✅ Snipet successfully edited!")
+      IO.puts("✅ Snippet successfully edited!")
     else
       {:error, :unallowed_switches} -> :error
       {:error, :missing_required_switches} -> :error
@@ -50,24 +51,24 @@ defmodule Snipex.Commands.Snippet do
   end
 
   def handle(["delete" | [id]]) do
-    if valid_uuid?(id) do
+    if UserInput.valid_uuid?(id) do
       case Storage.delete_by_id(:snippets, id) do
         {:ok, _} -> IO.puts("✅ Snippet with id '#{id}' succesfully deleted.")
         {:error, :not_found} -> IO.puts("❌ Item with id '#{id}' couldn't be deleted. Not found")
       end
-    else
-      IO.puts("❌ Invalid UUID.")
     end
   end
 
   def handle(["copy" | [id]]) do
-    case Storage.find_by_id(:snippets, id) do
-      {:ok, %{id: _, name: _, code: code}} ->
-        Clipboard.copy(code)
-        IO.puts("✅ Snippet with id '#{id}' copied to clipboard.")
+    if UserInput.valid_uuid?(id) do
+      case Storage.find_by_id(:snippets, id) do
+        {:ok, %{id: _, name: _, code: code}} ->
+          Clipboard.copy(code)
+          IO.puts("✅ Snippet with id '#{id}' copied to clipboard.")
 
-      {:error, :not_found} ->
-        :error
+        {:error, :not_found} ->
+          :error
+      end
     end
   end
 
@@ -77,12 +78,14 @@ defmodule Snipex.Commands.Snippet do
   end
 
   def handle(["show" | [id]]) do
-    case Storage.find_by_id(:snippets, id) do
-      {:ok, snippet} ->
-        Printer.print_detail(snippet, :snippets)
+    if UserInput.valid_uuid?(id) do
+      case Storage.find_by_id(:snippets, id) do
+        {:ok, snippet} ->
+          Printer.print_detail(snippet, :snippets)
 
-      {:error, :not_found} ->
-        :error
+        {:error, :not_found} ->
+          :error
+      end
     end
   end
 
@@ -102,10 +105,5 @@ defmodule Snipex.Commands.Snippet do
       {:error, :unallowed_switches} -> :error
       {:error, :missing_required_switches} -> :error
     end
-  end
-
-  defp valid_uuid?(id) do
-    uuid_regex = ~r/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-    Regex.match?(uuid_regex, id)
   end
 end

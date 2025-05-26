@@ -59,4 +59,28 @@ defmodule Snipex.Utils.UserInput do
         {:ok, parsed}
     end
   end
+
+  @doc """
+  Checks if the given `id` is a valid UUID (version 1–5).
+
+  ## Examples
+
+      iex> valid_uuid?("123e4567-e89b-12d3-a456-426614174000")
+      true
+
+      iex> valid_uuid?("invalid-uuid")
+      false
+  """
+  def valid_uuid?(id) do
+    uuid_regex = ~r/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+    case Regex.match?(uuid_regex, id) do
+      true ->
+        true
+
+      false ->
+        IO.puts("❌ Invalid UUID.")
+        false
+    end
+  end
 end
