@@ -20,9 +20,7 @@ defmodule Snipex.Commands.Snippet do
 
   def handle(["show" | [id]]), do: show_snippet(id)
 
-  def handle(["search" | _query]) do
-    IO.puts("FUZZY SEARCH BY QUERY")
-  end
+  def handle(["search" | opts]), do: search_snippets(opts)
 
   defp add_snippet(opts) do
     required_switches = [name: :string, code: :string]
@@ -73,6 +71,37 @@ defmodule Snipex.Commands.Snippet do
 
       {:error, :not_found} ->
         :error
+    end
+  end
+
+  defp search_snippets(opts) do
+    optional_switches = [name: :string, code: :string]
+
+    with {:ok, data} <- UserInput.validate_switches(opts, optional: optional_switches) do
+      cond do
+        name = Keyword.get(data, :name) ->
+          snippets = Storage.search_by_name(:snippets, name)
+          total_length = length(snippets)
+
+          IO.puts("\nID                                   | NAME")
+          IO.puts(String.duplicate("-", 80))
+
+          snippets
+          |> Enum.with_index()
+          |> Enum.each(fn {%{"id" => id, "name" => name, "code" => _}, index} ->
+            IO.puts("#{id} | #{String.pad_trailing(name, 14)}")
+            if index < total_length - 1, do: IO.puts(String.duplicate("-", 80))
+          end)
+
+        code = Keyword.get(data, :code) ->
+          IO.puts("Search by snippet code: #{code}")
+
+        true ->
+          :ok
+      end
+    else
+      {:error, :unallowed_switches} -> :error
+      {:error, :missing_required_switches} -> :error
     end
   end
 

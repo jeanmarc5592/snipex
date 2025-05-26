@@ -32,6 +32,8 @@ defmodule Snipex.Storage do
 
   def delete_by_id(:snippets, id), do: delete_data_by_id(@snippets_path, id)
 
+  def search_by_name(:snippets, name), do: search_data_by_name(@snippets_path, name)
+
   defp list_all_data(file) do
     file
     |> File.read!()
@@ -117,6 +119,13 @@ defmodule Snipex.Storage do
     end
   end
 
+  defp search_data_by_name(file, name) do
+    file
+    |> File.read!()
+    |> Jason.decode!()
+    |> Enum.filter(fn snippet -> fuzzy_includes?(snippet["name"], name) end)
+  end
+
   defp atomize_keys(map) do
     Enum.map(map, fn {key, value} -> {String.to_atom(key), value} end)
     |> Enum.into(%{})
@@ -135,5 +144,12 @@ defmodule Snipex.Storage do
         IO.puts("❌ Item with the #{key} '#{Map.get(item_to_insert, atom_key)}' already exists.")
         {:error, :duplicate_content}
     end
+  end
+
+  defp fuzzy_includes?(text, query) do
+    query
+    |> String.downcase()
+    |> String.graphemes()
+    |> Enum.all?(fn data -> String.contains?(String.downcase(text), data) end)
   end
 end
