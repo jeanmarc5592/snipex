@@ -56,9 +56,8 @@ defmodule Snipex.Commands.Snippet do
 
   defp show_snippet(id) do
     case Storage.find_by_id(:snippets, id) do
-      {:ok, %{id: id, name: name, code: code}} ->
-        IO.puts("\"#{name}\" [#{id}]\n")
-        IO.puts("#{code}")
+      {:ok, snippet} ->
+        Printer.print_detail(snippet, :snippets)
 
       {:error, :not_found} ->
         :error

@@ -12,4 +12,9 @@ defmodule Snipex.Printer do
       if index < total_length - 1, do: IO.puts(String.duplicate("-", 80))
     end)
   end
+
+  def print_detail(%{id: id, name: name, code: code}, :snippets) do
+    IO.puts("\"#{name}\" [#{id}]\n")
+    IO.puts("#{code}")
+  end
 end
