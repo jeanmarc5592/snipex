@@ -23,27 +23,7 @@ defmodule Snipex.Commands.Snippet do
   """
   def handle(args)
 
-  def handle(["add" | opts]), do: add_snippet(opts)
-
-  def handle(["edit" | opts]), do: edit_snippet(opts)
-
-  def handle(["delete" | [id]]) do
-    if valid_uuid?(id) do
-      delete_snippet(id)
-    else
-      IO.puts("❌ Invalid UUID.")
-    end
-  end
-
-  def handle(["copy" | [id]]), do: copy_snippet(id)
-
-  def handle(["list"]), do: list_snippets()
-
-  def handle(["show" | [id]]), do: show_snippet(id)
-
-  def handle(["search" | opts]), do: search_snippets(opts)
-
-  defp add_snippet(opts) do
+  def handle(["add" | opts]) do
     required_switches = [name: :string, code: :string]
 
     with {:ok, data} <- UserInput.validate_switches(opts, required: required_switches),
@@ -56,7 +36,7 @@ defmodule Snipex.Commands.Snippet do
     end
   end
 
-  def edit_snippet([id | opts]) do
+  def handle(["edit" | [id | opts]]) do
     optional_switches = [name: :string, code: :string]
 
     with {:ok, updates} <- UserInput.validate_switches(opts, optional: optional_switches),
@@ -69,14 +49,34 @@ defmodule Snipex.Commands.Snippet do
     end
   end
 
-  @doc false
-  defp list_snippets() do
+  def handle(["delete" | [id]]) do
+    if valid_uuid?(id) do
+      case Storage.delete_by_id(:snippets, id) do
+        {:ok, _} -> IO.puts("✅ Snippet with id '#{id}' succesfully deleted.")
+        {:error, :not_found} -> IO.puts("❌ Item with id '#{id}' couldn't be deleted. Not found")
+      end
+    else
+      IO.puts("❌ Invalid UUID.")
+    end
+  end
+
+  def handle(["copy" | [id]]) do
+    case Storage.find_by_id(:snippets, id) do
+      {:ok, %{id: _, name: _, code: code}} ->
+        Clipboard.copy(code)
+        IO.puts("✅ Snippet with id '#{id}' copied to clipboard.")
+
+      {:error, :not_found} ->
+        :error
+    end
+  end
+
+  def handle(["list"]) do
     snippets = Storage.list_all(:snippets)
     Printer.print_list(snippets, :snippets)
   end
 
-  @doc false
-  defp show_snippet(id) do
+  def handle(["show" | [id]]) do
     case Storage.find_by_id(:snippets, id) do
       {:ok, snippet} ->
         Printer.print_detail(snippet, :snippets)
@@ -86,8 +86,7 @@ defmodule Snipex.Commands.Snippet do
     end
   end
 
-  @doc false
-  defp search_snippets(opts) do
+  def handle(["search" | opts]) do
     required_switches = [name: :string, code: :string]
 
     with {:ok, data} <- UserInput.validate_switches(opts, required: required_switches) do
@@ -102,25 +101,6 @@ defmodule Snipex.Commands.Snippet do
     else
       {:error, :unallowed_switches} -> :error
       {:error, :missing_required_switches} -> :error
-    end
-  end
-
-  @doc false
-  defp delete_snippet(id) do
-    case Storage.delete_by_id(:snippets, id) do
-      {:ok, _} -> IO.puts("✅ Snippet with id '#{id}' succesfully deleted.")
-      {:error, :not_found} -> IO.puts("❌ Item with id '#{id}' couldn't be deleted. Not found")
-    end
-  end
-
-  defp copy_snippet(id) do
-    case Storage.find_by_id(:snippets, id) do
-      {:ok, %{id: _, name: _, code: code}} ->
-        Clipboard.copy(code)
-        IO.puts("✅ Snippet with id '#{id}' copied to clipboard.")
-
-      {:error, :not_found} ->
-        :error
     end
   end
 
