@@ -1,7 +1,27 @@
 defmodule Snipex.Commands.Snippet do
+  @moduledoc """
+  Provides CLI command handling for managing code snippets in Snipex.
+
+  This module handles subcommands under `snippet`, including adding, editing,
+  deleting, listing, showing, copying, and searching snippets.
+  """
+
   alias Snipex.Storage
   alias Snipex.Utils.UserInput, as: UserInput
   alias Snipex.Printer
+
+  @doc """
+  Handles all `snippet` subcommands:
+
+    * `add --name --code` – adds a new snippet
+    * `edit <id> [--name] [--code]` – updates a snippet
+    * `delete <id>` – deletes a snippet by ID
+    * `copy <id>` – copies snippet code to clipboard
+    * `list` – lists all snippets
+    * `show <id>` – displays snippet details
+    * `search [--name]` – searches snippets by name
+  """
+  def handle(args)
 
   def handle(["add" | opts]), do: add_snippet(opts)
 
@@ -49,11 +69,13 @@ defmodule Snipex.Commands.Snippet do
     end
   end
 
+  @doc false
   defp list_snippets() do
     snippets = Storage.list_all(:snippets)
     Printer.print_list(snippets, :snippets)
   end
 
+  @doc false
   defp show_snippet(id) do
     case Storage.find_by_id(:snippets, id) do
       {:ok, snippet} ->
@@ -64,6 +86,7 @@ defmodule Snipex.Commands.Snippet do
     end
   end
 
+  @doc false
   defp search_snippets(opts) do
     optional_switches = [name: :string, code: :string]
 
@@ -82,6 +105,7 @@ defmodule Snipex.Commands.Snippet do
     end
   end
 
+  @doc false
   defp delete_snippet(id) do
     case Storage.delete_by_id(:snippets, id) do
       {:ok, _} -> IO.puts("✅ Snippet with id '#{id}' succesfully deleted.")

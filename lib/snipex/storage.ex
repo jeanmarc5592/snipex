@@ -1,4 +1,21 @@
 defmodule Snipex.Storage do
+  @moduledoc """
+  Provides functions for managing snippet data storage in the Snipex application.
+
+  Handles reading, writing, editing, deleting, and searching snippet entries stored
+  as JSON files. This module abstracts file operations and ensures proper data handling
+  and formatting.
+
+  ## Features
+
+    * Initializes storage directories and files
+    * Inserts new snippet entries with duplicate checks
+    * Edits and deletes snippets by ID
+    * Lists all stored snippets
+    * Finds snippets by ID
+    * Performs fuzzy name-based searches
+  """
+
   # TODO: Control via .env
   # @base_path Path.join(System.user_home!(), ".snipex")
   @base_path Path.expand("../../data", __DIR__)
@@ -7,6 +24,11 @@ defmodule Snipex.Storage do
     snippets: @snippets_path
   ]
 
+  @doc """
+  Initializes the storage directory and JSON files.
+
+  Creates the base storage directory and empty JSON files if they don’t exist.
+  """
   def init() do
     File.mkdir_p!(@base_path)
 
@@ -19,27 +41,84 @@ defmodule Snipex.Storage do
     :ok
   end
 
+  @doc """
+  Inserts a new snippet into storage.
+
+  Fails if a snippet with the same name already exists.
+
+  ## Parameters
+
+    - `data`: A map with `:name` and `:code` keys
+    - `:snippets`: The atom representing the snippet storage file
+
+  ## Returns
+
+    - `{:ok, snippet}` on success
+    - `{:error, :duplicate_content}` if name is already taken
+  """
   def insert(%{name: name, code: code}, :snippets) do
     %Snipex.Snippet{id: UUID.uuid4(), name: name, code: code}
     |> insert_data(@snippets_path, Snipex.Snippet)
   end
 
+  @doc """
+  Edits an existing snippet by ID with provided updates.
+
+  ## Returns
+
+    - `{:ok, updated_snippet}` on success
+    - `{:error, :not_found}` if snippet ID is not found
+  """
   def edit(id, updates, :snippets), do: edit_data(id, updates, @snippets_path)
 
+  @doc """
+  Lists all snippets in storage.
+
+  ## Returns
+
+    - List of all stored snippets as maps
+  """
   def list_all(:snippets), do: list_all_data(@snippets_path)
 
+  @doc """
+  Finds a snippet by its ID.
+
+  ## Returns
+
+    - `{:ok, snippet}` if found
+    - `{:error, :not_found}` if not found
+  """
   def find_by_id(:snippets, id), do: find_data_by_id(@snippets_path, id)
 
+  @doc """
+  Deletes a snippet by ID.
+
+  ## Returns
+
+    - `{:ok, deleted_snippet}` if successful
+    - `{:error, :not_found}` if ID does not exist
+  """
   def delete_by_id(:snippets, id), do: delete_data_by_id(@snippets_path, id)
 
+  @doc """
+  Searches for snippets by a fuzzy-matching name.
+
+  Each character in the query must be present in the target name.
+
+  ## Returns
+
+    - A list of matching snippets
+  """
   def search_by_name(:snippets, name), do: search_data_by_name(@snippets_path, name)
 
+  @doc false
   defp list_all_data(file) do
     file
     |> File.read!()
     |> Jason.decode!()
   end
 
+  @doc false
   defp find_data_by_id(file, id) do
     existing_data =
       file
@@ -58,6 +137,7 @@ defmodule Snipex.Storage do
     end
   end
 
+  @doc false
   defp insert_data(new_data, file, target_struct) do
     existing_data =
       file
@@ -76,6 +156,7 @@ defmodule Snipex.Storage do
     end
   end
 
+  @doc false
   defp edit_data(id, updates, file) do
     existing_data =
       file
@@ -100,6 +181,7 @@ defmodule Snipex.Storage do
     end
   end
 
+  @doc false
   defp delete_data_by_id(file, id) do
     existing_data =
       file
@@ -119,6 +201,7 @@ defmodule Snipex.Storage do
     end
   end
 
+  @doc false
   defp search_data_by_name(file, name) do
     file
     |> File.read!()
@@ -126,11 +209,13 @@ defmodule Snipex.Storage do
     |> Enum.filter(fn snippet -> fuzzy_includes?(snippet["name"], name) end)
   end
 
+  @doc false
   defp atomize_keys(map) do
     Enum.map(map, fn {key, value} -> {String.to_atom(key), value} end)
     |> Enum.into(%{})
   end
 
+  @doc false
   defp find_duplicates(data, key, item_to_insert) do
     atom_key = String.to_existing_atom(key)
 
@@ -146,6 +231,7 @@ defmodule Snipex.Storage do
     end
   end
 
+  @doc false
   defp fuzzy_includes?(text, query) do
     query
     |> String.downcase()
