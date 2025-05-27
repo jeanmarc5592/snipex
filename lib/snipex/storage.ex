@@ -88,7 +88,7 @@ defmodule Snipex.Storage do
     - `{:ok, snippet}` if found
     - `{:error, :not_found}` if not found
   """
-  def find_by_id(:snippets, id), do: find_data_by_id(@snippets_path, id)
+  def find_by_id(id, :snippets), do: find_data_by_id(id, @snippets_path)
 
   @doc """
   Deletes a snippet by ID.
@@ -98,7 +98,7 @@ defmodule Snipex.Storage do
     - `{:ok, deleted_snippet}` if successful
     - `{:error, :not_found}` if ID does not exist
   """
-  def delete_by_id(:snippets, id), do: delete_data_by_id(@snippets_path, id)
+  def delete_by_id(id, :snippets), do: delete_data_by_id(id, @snippets_path)
 
   @doc """
   Searches for snippets by a fuzzy-matching name.
@@ -109,7 +109,7 @@ defmodule Snipex.Storage do
 
     - A list of matching snippets
   """
-  def search_by_name(:snippets, name), do: search_data_by_name(@snippets_path, name)
+  def search_by_name(name, :snippets), do: search_data_by_name(name, @snippets_path)
 
   @doc false
   defp list_all_data(file) do
@@ -119,7 +119,7 @@ defmodule Snipex.Storage do
   end
 
   @doc false
-  defp find_data_by_id(file, id) do
+  defp find_data_by_id(id, file) do
     existing_data =
       file
       |> File.read!()
@@ -182,7 +182,7 @@ defmodule Snipex.Storage do
   end
 
   @doc false
-  defp delete_data_by_id(file, id) do
+  defp delete_data_by_id(id, file) do
     existing_data =
       file
       |> File.read!()
@@ -202,7 +202,7 @@ defmodule Snipex.Storage do
   end
 
   @doc false
-  defp search_data_by_name(file, name) do
+  defp search_data_by_name(name, file) do
     file
     |> File.read!()
     |> Jason.decode!()

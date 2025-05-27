@@ -53,7 +53,7 @@ defmodule Snipex.Commands.Snippet do
 
   def handle(["delete" | [id]]) do
     if UserInput.valid_uuid?(id) do
-      case Storage.delete_by_id(:snippets, id) do
+      case Storage.delete_by_id(id, :snippets) do
         {:ok, _} -> IO.puts("✅ Snippet with id '#{id}' succesfully deleted.")
         {:error, :not_found} -> IO.puts("❌ Item with id '#{id}' couldn't be deleted. Not found")
       end
@@ -62,7 +62,7 @@ defmodule Snipex.Commands.Snippet do
 
   def handle(["copy" | [id]]) do
     if UserInput.valid_uuid?(id) do
-      case Storage.find_by_id(:snippets, id) do
+      case Storage.find_by_id(id, :snippets) do
         {:ok, %{id: _, name: _, code: code}} ->
           Clipboard.copy(code)
           IO.puts("✅ Snippet with id '#{id}' copied to clipboard.")
@@ -80,7 +80,7 @@ defmodule Snipex.Commands.Snippet do
 
   def handle(["show" | [id]]) do
     if UserInput.valid_uuid?(id) do
-      case Storage.find_by_id(:snippets, id) do
+      case Storage.find_by_id(id, :snippets) do
         {:ok, snippet} -> Printer.print_detail(snippet, :snippets)
         {:error, :not_found} -> IO.puts("❌ Item with id '#{id}' couldn't be found.")
       end
