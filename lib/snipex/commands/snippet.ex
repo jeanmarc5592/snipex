@@ -47,6 +47,7 @@ defmodule Snipex.Commands.Snippet do
       {:error, :unallowed_switches} -> :error
       {:error, :missing_required_switches} -> :error
       {:error, :not_found} -> :error
+      false -> :error
     end
   end
 
@@ -67,7 +68,7 @@ defmodule Snipex.Commands.Snippet do
           IO.puts("✅ Snippet with id '#{id}' copied to clipboard.")
 
         {:error, :not_found} ->
-          :error
+          IO.puts("❌ Item with id '#{id}' couldn't be copied. Not found")
       end
     end
   end
@@ -80,11 +81,8 @@ defmodule Snipex.Commands.Snippet do
   def handle(["show" | [id]]) do
     if UserInput.valid_uuid?(id) do
       case Storage.find_by_id(:snippets, id) do
-        {:ok, snippet} ->
-          Printer.print_detail(snippet, :snippets)
-
-        {:error, :not_found} ->
-          :error
+        {:ok, snippet} -> Printer.print_detail(snippet, :snippets)
+        {:error, :not_found} -> IO.puts("❌ Item with id '#{id}' couldn't be found.")
       end
     end
   end
