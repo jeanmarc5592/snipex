@@ -21,9 +21,10 @@ defmodule Snipex.Commands.Snippet do
     * `show <id>` – displays snippet details
     * `search --name` – searches snippets by name
   """
+  @spec handle([String.t()]) :: :ok | :error | nil
   def handle(args)
 
-  def handle(["add" | opts]) do
+  def handle(["add" | opts]) when is_list(opts) do
     required_switches = [name: :string, code: :string]
 
     with {:ok, data} <- UserInput.validate_switches(opts, required: required_switches),
@@ -37,7 +38,7 @@ defmodule Snipex.Commands.Snippet do
     end
   end
 
-  def handle(["edit" | [id | opts]]) do
+  def handle(["edit" | [id | opts]]) when is_binary(id) and is_list(opts) do
     optional_switches = [name: :string, code: :string]
 
     with true <- UserInput.valid_uuid?(id),
@@ -52,7 +53,7 @@ defmodule Snipex.Commands.Snippet do
     end
   end
 
-  def handle(["delete" | [id]]) do
+  def handle(["delete" | [id]]) when is_binary(id) do
     if UserInput.valid_uuid?(id) do
       case Storage.delete_by_id(id, :snippets) do
         {:ok, _} -> IO.puts("✅ Snippet with id '#{id}' succesfully deleted.")
@@ -61,7 +62,7 @@ defmodule Snipex.Commands.Snippet do
     end
   end
 
-  def handle(["copy" | [id]]) do
+  def handle(["copy" | [id]]) when is_binary(id) do
     if UserInput.valid_uuid?(id) do
       case Storage.find_by_id(id, :snippets) do
         {:ok, %{id: _, name: _, code: code}} ->
@@ -79,7 +80,7 @@ defmodule Snipex.Commands.Snippet do
     Printer.print_list(snippets, :snippets)
   end
 
-  def handle(["show" | [id]]) do
+  def handle(["show" | [id]]) when is_binary(id) do
     if UserInput.valid_uuid?(id) do
       case Storage.find_by_id(id, :snippets) do
         {:ok, snippet} -> Printer.print_detail(snippet, :snippets)
@@ -88,8 +89,8 @@ defmodule Snipex.Commands.Snippet do
     end
   end
 
-  def handle(["search" | opts]) do
-    required_switches = [name: :string, code: :string]
+  def handle(["search" | opts]) when is_list(opts) do
+    required_switches = [name: :string]
 
     with {:ok, data} <- UserInput.validate_switches(opts, required: required_switches) do
       cond do
