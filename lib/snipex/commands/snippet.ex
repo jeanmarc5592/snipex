@@ -33,6 +33,7 @@ defmodule Snipex.Commands.Snippet do
       {:error, :unallowed_switches} -> :error
       {:error, :missing_required_switches} -> :error
       {:error, :duplicate_content} -> :error
+      {:error, :invalid_data} -> :error
     end
   end
 
@@ -68,7 +69,7 @@ defmodule Snipex.Commands.Snippet do
           IO.puts("✅ Snippet with id '#{id}' copied to clipboard.")
 
         {:error, :not_found} ->
-          IO.puts("❌ Item with id '#{id}' couldn't be copied. Not found")
+          :error
       end
     end
   end
@@ -82,7 +83,7 @@ defmodule Snipex.Commands.Snippet do
     if UserInput.valid_uuid?(id) do
       case Storage.find_by_id(id, :snippets) do
         {:ok, snippet} -> Printer.print_detail(snippet, :snippets)
-        {:error, :not_found} -> IO.puts("❌ Item with id '#{id}' couldn't be found.")
+        {:error, :not_found} -> :error
       end
     end
   end
@@ -93,7 +94,7 @@ defmodule Snipex.Commands.Snippet do
     with {:ok, data} <- UserInput.validate_switches(opts, required: required_switches) do
       cond do
         name = Keyword.get(data, :name) ->
-          snippets = Storage.search_by_name(:snippets, name)
+          snippets = Storage.search_by_name(name, :snippets)
           Printer.print_list(snippets, :snippets)
 
         true ->

@@ -56,10 +56,12 @@ defmodule Snipex.Storage do
     - `{:ok, snippet}` on success
     - `{:error, :duplicate_content}` if name is already taken
   """
-  def insert(%{name: name, code: code}, :snippets) do
+  def insert(%{name: name, code: code}, :snippets) when is_binary(name) and is_binary(code) do
     %Snipex.Snippet{id: UUID.uuid4(), name: name, code: code}
     |> insert_data(@snippets_path, Snipex.Snippet)
   end
+
+  def insert(_, :snippets), do: {:error, :invalid_data}
 
   @doc """
   Edits an existing snippet by ID with provided updates.
@@ -69,7 +71,9 @@ defmodule Snipex.Storage do
     - `{:ok, updated_snippet}` on success
     - `{:error, :not_found}` if snippet ID is not found
   """
-  def edit(id, updates, :snippets), do: edit_data(id, updates, @snippets_path)
+  def edit(id, updates, :snippets) when is_binary(id) and is_list(updates) do
+    edit_data(id, updates, @snippets_path)
+  end
 
   @doc """
   Lists all snippets in storage.
@@ -78,7 +82,9 @@ defmodule Snipex.Storage do
 
     - List of all stored snippets as maps
   """
-  def list_all(:snippets), do: list_all_data(@snippets_path)
+  def list_all(:snippets) do
+    list_all_data(@snippets_path)
+  end
 
   @doc """
   Finds a snippet by its ID.
@@ -88,7 +94,9 @@ defmodule Snipex.Storage do
     - `{:ok, snippet}` if found
     - `{:error, :not_found}` if not found
   """
-  def find_by_id(id, :snippets), do: find_data_by_id(id, @snippets_path)
+  def find_by_id(id, :snippets) when is_binary(id) do
+    find_data_by_id(id, @snippets_path)
+  end
 
   @doc """
   Deletes a snippet by ID.
@@ -98,7 +106,9 @@ defmodule Snipex.Storage do
     - `{:ok, deleted_snippet}` if successful
     - `{:error, :not_found}` if ID does not exist
   """
-  def delete_by_id(id, :snippets), do: delete_data_by_id(id, @snippets_path)
+  def delete_by_id(id, :snippets) when is_binary(id) do
+    delete_data_by_id(id, @snippets_path)
+  end
 
   @doc """
   Searches for snippets by a fuzzy-matching name.
@@ -109,17 +119,19 @@ defmodule Snipex.Storage do
 
     - A list of matching snippets
   """
-  def search_by_name(name, :snippets), do: search_data_by_name(name, @snippets_path)
+  def search_by_name(name, :snippets) when is_binary(name) do
+    search_data_by_name(name, @snippets_path)
+  end
 
   @doc false
-  defp list_all_data(file) do
+  defp list_all_data(file) when is_binary(file) do
     file
     |> File.read!()
     |> Jason.decode!()
   end
 
   @doc false
-  defp find_data_by_id(id, file) do
+  defp find_data_by_id(id, file) when is_binary(id) and is_binary(file) do
     existing_data =
       file
       |> File.read!()
@@ -138,7 +150,8 @@ defmodule Snipex.Storage do
   end
 
   @doc false
-  defp insert_data(new_data, file, target_struct) do
+  defp insert_data(new_data, file, target_struct)
+       when is_struct(new_data) and is_binary(file) and is_atom(target_struct) do
     existing_data =
       file
       |> File.read!()
@@ -157,7 +170,9 @@ defmodule Snipex.Storage do
   end
 
   @doc false
-  defp edit_data(id, updates, file) do
+  defp edit_data(id, updates, file) when is_binary(id) and is_list(updates) and is_binary(file) do
+    IO.inspect(updates)
+
     existing_data =
       file
       |> File.read!()
@@ -182,7 +197,7 @@ defmodule Snipex.Storage do
   end
 
   @doc false
-  defp delete_data_by_id(id, file) do
+  defp delete_data_by_id(id, file) when is_binary(id) and is_binary(file) do
     existing_data =
       file
       |> File.read!()
@@ -202,7 +217,7 @@ defmodule Snipex.Storage do
   end
 
   @doc false
-  defp search_data_by_name(name, file) do
+  defp search_data_by_name(name, file) when is_binary(name) and is_binary(file) do
     file
     |> File.read!()
     |> Jason.decode!()
@@ -210,14 +225,15 @@ defmodule Snipex.Storage do
   end
 
   @doc false
-  defp atomize_keys(map) do
+  defp atomize_keys(map) when is_map(map) do
     Enum.map(map, fn {key, value} -> {String.to_atom(key), value} end)
     |> Enum.into(%{})
   end
 
   @doc false
-  defp find_duplicates(data, key, item_to_insert) do
-    atom_key = String.to_existing_atom(key)
+  defp find_duplicates(data, key, item_to_insert)
+       when is_list(data) and is_binary(key) and is_map(item_to_insert) do
+    atom_key = String.to_atom(key)
 
     case Enum.find(data, fn item ->
            Map.get(item, atom_key) == Map.get(item_to_insert, atom_key)
@@ -232,7 +248,7 @@ defmodule Snipex.Storage do
   end
 
   @doc false
-  defp fuzzy_includes?(text, query) do
+  defp fuzzy_includes?(text, query) when is_binary(text) and is_binary(query) do
     query
     |> String.downcase()
     |> String.graphemes()
