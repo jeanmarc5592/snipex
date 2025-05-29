@@ -16,13 +16,14 @@ defmodule Snipex.Storage do
     * Performs fuzzy name-based searches
   """
 
-  # TODO: Control via .env
-  # @base_path Path.join(System.user_home!(), ".snipex")
-  @base_path Path.expand("../../data", __DIR__)
-  @snippets_path Path.join(@base_path, "snippets.json")
-  @storage_paths [
-    snippets: @snippets_path
-  ]
+  # @base_path System.get_env("SNIPEX_DATA_DIR") || Path.expand("../../data", __DIR__)
+  # @snippets_path Path.join(@base_path, "snippets.json")
+  # @storage_paths [
+  #   snippets: @snippets_path
+  # ]
+
+  defp base_path, do: System.get_env("SNIPEX_STORAGE_PATH") || Path.expand("../../data", __DIR__)
+  defp snippets_path, do: Path.join(base_path(), "snippets.json")
 
   @doc """
   Initializes the storage directory and JSON files.
@@ -30,15 +31,25 @@ defmodule Snipex.Storage do
   Creates the base storage directory and empty JSON files if they don’t exist.
   """
   @spec init() :: :ok
-  def init() do
-    File.mkdir_p!(@base_path)
+  # def init() do
+  #   File.mkdir_p!(@base_path)
 
-    Enum.each(@storage_paths, fn {_, path} ->
+  #   Enum.each(@storage_paths, fn {_, path} ->
+  #     if !File.exists?(path), do: File.write!(path, "[]")
+  #   end)
+
+  #   IO.puts("✅ Initialized snipex data storage.")
+
+  #   :ok
+  # end
+  def init do
+    File.mkdir_p!(base_path())
+
+    Enum.each([snippets: snippets_path()], fn {_, path} ->
       if !File.exists?(path), do: File.write!(path, "[]")
     end)
 
     IO.puts("✅ Initialized snipex data storage.")
-
     :ok
   end
 
@@ -61,7 +72,7 @@ defmodule Snipex.Storage do
           {:ok, Snipex.Snippet.t()} | {:error, :duplicate_content | :invalid_data}
   def insert(%{name: name, code: code}, :snippets) when is_binary(name) and is_binary(code) do
     %Snipex.Snippet{id: UUID.uuid4(), name: name, code: code}
-    |> insert_data(@snippets_path, Snipex.Snippet)
+    |> insert_data(snippets_path(), Snipex.Snippet)
   end
 
   def insert(_, :snippets), do: {:error, :invalid_data}
@@ -77,7 +88,7 @@ defmodule Snipex.Storage do
   @spec edit(String.t(), [{:name | :code, String.t()}], :snippets) ::
           {:ok, Snipex.Snippet.t()} | {:error, :not_found}
   def edit(id, updates, :snippets) when is_binary(id) and is_list(updates) do
-    edit_data(id, updates, @snippets_path)
+    edit_data(id, updates, snippets_path())
   end
 
   @doc """
@@ -89,7 +100,7 @@ defmodule Snipex.Storage do
   """
   @spec list_all(:snippets) :: [Snipex.Snippet.t()]
   def list_all(:snippets) do
-    list_all_data(@snippets_path)
+    list_all_data(snippets_path())
   end
 
   @doc """
@@ -102,7 +113,7 @@ defmodule Snipex.Storage do
   """
   @spec find_by_id(String.t(), :snippets) :: {:ok, Snipex.Snippet.t()} | {:error, :not_found}
   def find_by_id(id, :snippets) when is_binary(id) do
-    find_data_by_id(id, @snippets_path)
+    find_data_by_id(id, snippets_path())
   end
 
   @doc """
@@ -115,7 +126,7 @@ defmodule Snipex.Storage do
   """
   @spec delete_by_id(String.t(), :snippets) :: {:ok, Snipex.Snippet.t()} | {:error, :not_found}
   def delete_by_id(id, :snippets) when is_binary(id) do
-    delete_data_by_id(id, @snippets_path)
+    delete_data_by_id(id, snippets_path())
   end
 
   @doc """
@@ -129,7 +140,7 @@ defmodule Snipex.Storage do
   """
   @spec search_by_name(String.t(), :snippets) :: [map]
   def search_by_name(name, :snippets) when is_binary(name) do
-    search_data_by_name(name, @snippets_path)
+    search_data_by_name(name, snippets_path())
   end
 
   @doc false
