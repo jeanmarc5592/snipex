@@ -28,8 +28,8 @@ defmodule Snipex.Commands.Snippet do
     required_switches = [name: :string, code: :string]
 
     with {:ok, data} <- UserInput.validate_switches(opts, required: required_switches),
-         {:ok, _snippet} <- Storage.insert(Map.new(data), :snippets) do
-      IO.puts("✅ Snippet successfully saved!")
+         {:ok, snippet} <- Storage.insert(Map.new(data), :snippets) do
+      IO.puts("✅ Snippet successfully saved with id '#{snippet.id}'!")
     else
       {:error, :unallowed_switches} -> :error
       {:error, :missing_required_switches} -> :error
@@ -44,7 +44,7 @@ defmodule Snipex.Commands.Snippet do
     with true <- UserInput.valid_uuid?(id),
          {:ok, updates} <- UserInput.validate_switches(opts, optional: optional_switches),
          {:ok, _snippet} <- Storage.edit(id, updates, :snippets) do
-      IO.puts("✅ Snippet successfully edited!")
+      IO.puts("✅ Snippet with id '#{id}' successfully edited!")
     else
       {:error, :unallowed_switches} -> :error
       {:error, :missing_required_switches} -> :error
@@ -56,8 +56,8 @@ defmodule Snipex.Commands.Snippet do
   def handle(["delete" | [id]]) when is_binary(id) do
     if UserInput.valid_uuid?(id) do
       case Storage.delete_by_id(id, :snippets) do
-        {:ok, _} -> IO.puts("✅ Snippet with id '#{id}' succesfully deleted.")
-        {:error, :not_found} -> IO.puts("❌ Item with id '#{id}' couldn't be deleted. Not found")
+        {:ok, _} -> IO.puts("✅ Snippet with id '#{id}' succesfully deleted!")
+        {:error, :not_found} -> :error
       end
     end
   end

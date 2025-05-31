@@ -239,6 +239,7 @@ defmodule Snipex.Storage do
 
       # When right list is empty, the item with the id doesn't exist
       {_, []} ->
+        IO.puts("❌ Item with id '#{id}' couldn't be deleted. Not found!")
         {:error, :not_found}
     end
   end
