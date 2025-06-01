@@ -24,6 +24,7 @@ defmodule Snipex.Storage do
 
   defp base_path, do: System.get_env("SNIPEX_STORAGE_PATH") || Path.expand("../../data", __DIR__)
   defp snippets_path, do: Path.join(base_path(), "snippets.json")
+  defp tags_path, do: Path.join(base_path(), "tags.json")
 
   @doc """
   Initializes the storage directory and JSON files.
@@ -45,7 +46,7 @@ defmodule Snipex.Storage do
   def init do
     File.mkdir_p!(base_path())
 
-    Enum.each([snippets: snippets_path()], fn {_, path} ->
+    Enum.each([{:snippets, snippets_path()}, {:tags, tags_path()}], fn {_, path} ->
       if !File.exists?(path), do: File.write!(path, "[]")
     end)
 
@@ -54,19 +55,20 @@ defmodule Snipex.Storage do
   end
 
   @doc """
-  Inserts a new snippet into storage.
+  Inserts a new entry into storage (`:snippets` or `:tags`).
 
-  Fails if a snippet with the same name already exists.
+  Fails if an entry with the same name already exists.
 
   ## Parameters
 
-    - `data`: A map with `:name` and `:code` keys
-    - `:snippets`: The atom representing the snippet storage file
+    - `data`: A map containing the required fields (e.g., `:name` and `:code`)
+    - `type`: Either `:snippets` or `:tags`, indicating the storage target
 
   ## Returns
 
-    - `{:ok, snippet}` on success
-    - `{:error, :duplicate_content}` if name is already taken
+    - `{:ok, entry}` on success
+    - `{:error, :duplicate_content}` if the name already exists
+    - `{:error, :invalid_data}` for missing or invalid input
   """
   @spec insert(%{name: String.t(), code: String.t()}, :snippets) ::
           {:ok, Snipex.Snippet.t()} | {:error, :duplicate_content | :invalid_data}
@@ -76,6 +78,15 @@ defmodule Snipex.Storage do
   end
 
   def insert(_, :snippets), do: {:error, :invalid_data}
+
+  @spec insert(%{name: String.t()}, :tags) ::
+          {:ok, Snipex.Tag.t()} | {:error, :duplicate_content | :invalid_data}
+  def insert(%{name: name}, :tags) when is_binary(name) do
+    %Snipex.Tag{id: UUID.uuid4(), name: name}
+    |> insert_data(tags_path(), Snipex.Tag)
+  end
+
+  def insert(_, :tags), do: {:error, :invalid_data}
 
   @doc """
   Edits an existing snippet by ID with provided updates.

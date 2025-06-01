@@ -10,11 +10,13 @@ defmodule Snipex do
   """
   alias Snipex.Commands.Snippet, as: Snippet
   alias Snipex.Commands.Init, as: Init
+  alias Snipex.Commands.Tag, as: Tag
 
   def main(args) do
     case args do
       ["init"] -> Init.handle()
       ["snippet" | rest] -> Snippet.handle(rest)
+      ["tag" | rest] -> Tag.handle(rest)
       _ -> "Snipex CLI"
     end
   end
