@@ -26,8 +26,13 @@ defmodule Snipex.Commands.Snippet do
 
   def handle(["add" | opts]) when is_list(opts) do
     required_switches = [name: :string, code: :string]
+    optional_switches = [tag: :string]
 
-    with {:ok, data} <- UserInput.validate_switches(opts, required: required_switches),
+    with {:ok, data} <-
+           UserInput.validate_switches(opts,
+             required: required_switches,
+             optional: optional_switches
+           ),
          {:ok, snippet} <- Storage.insert(Map.new(data), :snippets) do
       IO.puts("✅ Snippet successfully saved with id '#{snippet.id}'!")
     else

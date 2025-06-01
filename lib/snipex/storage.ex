@@ -72,7 +72,8 @@ defmodule Snipex.Storage do
   """
   @spec insert(%{name: String.t(), code: String.t()}, :snippets) ::
           {:ok, Snipex.Snippet.t()} | {:error, :duplicate_content | :invalid_data}
-  def insert(%{name: name, code: code}, :snippets) when is_binary(name) and is_binary(code) do
+  def insert(%{name: name, code: code}, :snippets)
+      when is_binary(name) and is_binary(code) do
     %Snipex.Snippet{id: UUID.uuid4(), name: name, code: code}
     |> insert_data(snippets_path(), Snipex.Snippet)
   end
@@ -89,17 +90,31 @@ defmodule Snipex.Storage do
   def insert(_, :tags), do: {:error, :invalid_data}
 
   @doc """
-  Edits an existing snippet by ID with provided updates.
+  Edits an existing entry (`:snippets` or `:tags`) by ID with the provided updates.
+
+  When editing a tag, all associated snippets with that tag will have their `tag` field updated accordingly.
+
+  ## Parameters
+
+    - `id`: The ID of the entry to update
+    - `updates`: A list of `{field, value}` tuples to update (e.g., `:name`, `:code`)
+    - `type`: Either `:snippets` or `:tags`, indicating the storage target
 
   ## Returns
 
-    - `{:ok, updated_snippet}` on success
-    - `{:error, :not_found}` if snippet ID is not found
+    - `{:ok, updated_entry}` on success
+    - `{:error, :not_found}` if the entry ID is not found
   """
   @spec edit(String.t(), [{:name | :code, String.t()}], :snippets) ::
           {:ok, Snipex.Snippet.t()} | {:error, :not_found}
   def edit(id, updates, :snippets) when is_binary(id) and is_list(updates) do
     edit_data(id, updates, snippets_path())
+  end
+
+  @spec edit(String.t(), [{:name, String.t()}], :tags) ::
+          {:ok, Snipex.Tag.t()} | {:error, :not_found}
+  def edit(id, updates, :tags) when is_binary(id) and is_list(updates) do
+    edit_data(id, updates, tags_path())
   end
 
   @doc """
@@ -208,8 +223,6 @@ defmodule Snipex.Storage do
   @spec edit_data(String.t(), [{atom(), String.t()}], String.t()) ::
           {:ok, map()} | {:error, :not_found}
   defp edit_data(id, updates, file) when is_binary(id) and is_list(updates) and is_binary(file) do
-    IO.inspect(updates)
-
     existing_data =
       file
       |> File.read!()
