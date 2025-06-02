@@ -70,12 +70,18 @@ defmodule Snipex.Storage do
     - `{:error, :duplicate_content}` if the name already exists
     - `{:error, :invalid_data}` for missing or invalid input
   """
-  @spec insert(%{name: String.t(), code: String.t()}, :snippets) ::
-          {:ok, Snipex.Snippet.t()} | {:error, :duplicate_content | :invalid_data}
-  def insert(%{name: name, code: code}, :snippets)
+  @spec insert(%{name: String.t(), code: String.t(), tag: String.t() | nil}, :snippets) ::
+          {:ok, Snipex.Snippet.t()} | {:error, :duplicate_content | :invalid_data | :not_found}
+  def insert(%{name: name, code: code, tag: tag}, :snippets)
       when is_binary(name) and is_binary(code) do
-    %Snipex.Snippet{id: UUID.uuid4(), name: name, code: code}
-    |> insert_data(snippets_path(), Snipex.Snippet)
+    case find_by_name(tag, :tags) do
+      {:ok, _tag} ->
+        %Snipex.Snippet{id: UUID.uuid4(), name: name, code: code, tag: tag}
+        |> insert_data(snippets_path(), Snipex.Snippet)
+
+      {:error, :not_found} ->
+        {:error, :not_found}
+    end
   end
 
   def insert(_, :snippets), do: {:error, :invalid_data}
@@ -143,6 +149,24 @@ defmodule Snipex.Storage do
   end
 
   @doc """
+  Finds a tag by its name.
+
+  ## Parameters
+
+    - `name`: The name of the tag to look for.
+    - `:tags`: Specifies that the search is in the tags storage.
+
+  ## Returns
+
+    - `{:ok, tag}` if found
+    - `{:error, :not_found}` if no tag matches the name
+  """
+  @spec find_by_name(String.t(), :tags) :: {:ok, Snipex.Tag.t()} | {:error, :not_found}
+  def find_by_name(name, :tags) when is_binary(name) do
+    find_data_by_name(name, tags_path())
+  end
+
+  @doc """
   Deletes a snippet by ID.
 
   ## Returns
@@ -189,6 +213,25 @@ defmodule Snipex.Storage do
     case Enum.find_index(existing_data, fn item -> item.id == id end) do
       nil ->
         IO.puts("❌ Item with id '#{id}' doesn't exist.")
+        {:error, :not_found}
+
+      index ->
+        item = Enum.at(existing_data, index)
+        {:ok, item}
+    end
+  end
+
+  @doc false
+  defp find_data_by_name(name, file) when is_binary(name) and is_binary(file) do
+    existing_data =
+      file
+      |> File.read!()
+      |> Jason.decode!()
+      |> Enum.map(fn item -> atomize_keys(item) end)
+
+    case Enum.find_index(existing_data, fn item -> item.name == name end) do
+      nil ->
+        IO.puts("❌ Item with name '#{name}' doesn't exist.")
         {:error, :not_found}
 
       index ->

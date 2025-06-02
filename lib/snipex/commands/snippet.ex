@@ -33,13 +33,15 @@ defmodule Snipex.Commands.Snippet do
              required: required_switches,
              optional: optional_switches
            ),
-         {:ok, snippet} <- Storage.insert(Map.new(data), :snippets) do
+         snippet_data = Map.put_new(Map.new(data), :tag, nil),
+         {:ok, snippet} <- Storage.insert(snippet_data, :snippets) do
       IO.puts("✅ Snippet successfully saved with id '#{snippet.id}'!")
     else
       {:error, :unallowed_switches} -> :error
       {:error, :missing_required_switches} -> :error
       {:error, :duplicate_content} -> :error
       {:error, :invalid_data} -> :error
+      {:error, :not_found} -> :error
     end
   end
 
