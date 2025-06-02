@@ -163,7 +163,7 @@ defmodule Snipex.Storage do
   """
   @spec find_by_name(String.t(), :tags) :: {:ok, Snipex.Tag.t()} | {:error, :not_found}
   def find_by_name(name, :tags) when is_binary(name) do
-    find_data_by_name(name, tags_path())
+    find_data_by_name(name, tags_path(), :tag)
   end
 
   @doc """
@@ -222,7 +222,9 @@ defmodule Snipex.Storage do
   end
 
   @doc false
-  defp find_data_by_name(name, file) when is_binary(name) and is_binary(file) do
+  @spec find_data_by_name(String.t(), String.t(), atom()) :: {:ok, map()} | {:error, :not_found}
+  defp find_data_by_name(name, file, type)
+       when is_binary(name) and is_binary(file) and is_atom(type) do
     existing_data =
       file
       |> File.read!()
@@ -231,7 +233,7 @@ defmodule Snipex.Storage do
 
     case Enum.find_index(existing_data, fn item -> item.name == name end) do
       nil ->
-        IO.puts("❌ Item with name '#{name}' doesn't exist.")
+        IO.puts("❌ #{type} with name '#{name}' doesn't exist.")
         {:error, :not_found}
 
       index ->
