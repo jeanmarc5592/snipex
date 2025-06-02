@@ -145,7 +145,7 @@ defmodule Snipex.Storage do
   """
   @spec find_by_id(String.t(), :snippets) :: {:ok, Snipex.Snippet.t()} | {:error, :not_found}
   def find_by_id(id, :snippets) when is_binary(id) do
-    find_data_by_id(id, snippets_path())
+    find_data_by_id(id, snippets_path(), :snippet)
   end
 
   @doc """
@@ -202,8 +202,8 @@ defmodule Snipex.Storage do
   end
 
   @doc false
-  @spec find_data_by_id(String.t(), String.t()) :: {:ok, map()} | {:error, :not_found}
-  defp find_data_by_id(id, file) when is_binary(id) and is_binary(file) do
+  @spec find_data_by_id(String.t(), String.t(), atom()) :: {:ok, map()} | {:error, :not_found}
+  defp find_data_by_id(id, file, type) when is_binary(id) and is_binary(file) and is_atom(type) do
     existing_data =
       file
       |> File.read!()
@@ -212,7 +212,7 @@ defmodule Snipex.Storage do
 
     case Enum.find_index(existing_data, fn item -> item.id == id end) do
       nil ->
-        IO.puts("❌ Item with id '#{id}' doesn't exist.")
+        IO.puts("❌ #{type} with id '#{id}' doesn't exist.")
         {:error, :not_found}
 
       index ->
