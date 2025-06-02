@@ -114,13 +114,13 @@ defmodule Snipex.Storage do
   @spec edit(String.t(), [{:name | :code, String.t()}], :snippets) ::
           {:ok, Snipex.Snippet.t()} | {:error, :not_found}
   def edit(id, updates, :snippets) when is_binary(id) and is_list(updates) do
-    edit_data(id, updates, snippets_path())
+    edit_data(id, updates, snippets_path(), :snippet)
   end
 
   @spec edit(String.t(), [{:name, String.t()}], :tags) ::
           {:ok, Snipex.Tag.t()} | {:error, :not_found}
   def edit(id, updates, :tags) when is_binary(id) and is_list(updates) do
-    edit_data(id, updates, tags_path())
+    edit_data(id, updates, tags_path(), :tag)
   end
 
   @doc """
@@ -176,7 +176,7 @@ defmodule Snipex.Storage do
   """
   @spec delete_by_id(String.t(), :snippets) :: {:ok, Snipex.Snippet.t()} | {:error, :not_found}
   def delete_by_id(id, :snippets) when is_binary(id) do
-    delete_data_by_id(id, snippets_path())
+    delete_data_by_id(id, snippets_path(), :snippet)
   end
 
   @doc """
@@ -265,9 +265,10 @@ defmodule Snipex.Storage do
   end
 
   @doc false
-  @spec edit_data(String.t(), [{atom(), String.t()}], String.t()) ::
+  @spec edit_data(String.t(), [{atom(), String.t()}], String.t(), atom()) ::
           {:ok, map()} | {:error, :not_found}
-  defp edit_data(id, updates, file) when is_binary(id) and is_list(updates) and is_binary(file) do
+  defp edit_data(id, updates, file, type)
+       when is_binary(id) and is_list(updates) and is_binary(file) and is_atom(type) do
     existing_data =
       file
       |> File.read!()
@@ -276,7 +277,7 @@ defmodule Snipex.Storage do
 
     case Enum.find_index(existing_data, fn item -> item.id == id end) do
       nil ->
-        IO.puts("❌ Item with id '#{id}' doesn't exist.")
+        IO.puts("❌ #{type} with id '#{id}' doesn't exist.")
         {:error, :not_found}
 
       index ->
@@ -292,8 +293,9 @@ defmodule Snipex.Storage do
   end
 
   @doc false
-  @spec delete_data_by_id(String.t(), String.t()) :: {:ok, map()} | {:error, :not_found}
-  defp delete_data_by_id(id, file) when is_binary(id) and is_binary(file) do
+  @spec delete_data_by_id(String.t(), String.t(), atom()) :: {:ok, map()} | {:error, :not_found}
+  defp delete_data_by_id(id, file, type)
+       when is_binary(id) and is_binary(file) and is_atom(type) do
     existing_data =
       file
       |> File.read!()
@@ -308,7 +310,7 @@ defmodule Snipex.Storage do
 
       # When right list is empty, the item with the id doesn't exist
       {_, []} ->
-        IO.puts("❌ Item with id '#{id}' couldn't be deleted. Not found!")
+        IO.puts("❌ #{type} with id '#{id}' couldn't be deleted. Not found!")
         {:error, :not_found}
     end
   end
