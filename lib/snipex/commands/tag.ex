@@ -1,6 +1,7 @@
 defmodule Snipex.Commands.Tag do
   alias Snipex.Storage
   alias Snipex.Utils.UserInput, as: UserInput
+  alias Snipex.Printer
 
   def handle(args)
 
@@ -53,5 +54,10 @@ defmodule Snipex.Commands.Tag do
     else
       {:error, :not_found} -> :error
     end
+  end
+
+  def handle(["list"]) do
+    tags = Storage.list_all(:tags)
+    Printer.print_list(tags, :tags)
   end
 end

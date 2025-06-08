@@ -124,15 +124,20 @@ defmodule Snipex.Storage do
   end
 
   @doc """
-  Lists all snippets in storage.
+  Lists all existing data in storage.
 
   ## Returns
 
-    - List of all stored snippets as maps
+    - List of all stored snippets or tags as a list of maps
   """
   @spec list_all(:snippets) :: [Snipex.Snippet.t()]
   def list_all(:snippets) do
     list_all_data(snippets_path())
+  end
+
+  @spec list_all(:tags) :: [Snipex.Tag.t()]
+  def list_all(:tags) do
+    list_all_data(tags_path())
   end
 
   @doc """
