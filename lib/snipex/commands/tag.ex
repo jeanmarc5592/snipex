@@ -42,4 +42,16 @@ defmodule Snipex.Commands.Tag do
       {:error, :in_use} -> :error
     end
   end
+
+  def handle(["delete" | [id | opts]]) do
+    optional_switches = [force: :boolean]
+
+    with true <- UserInput.valid_uuid?(id),
+         {:ok, [force: true]} <- UserInput.validate_switches(opts, optional: optional_switches),
+         {:ok, _tag} <- Storage.delete_by_id(id, :tags, force: true) do
+      IO.puts("✅ Tag with id '#{id}' succesfully deleted!")
+    else
+      {:error, :not_found} -> :error
+    end
+  end
 end

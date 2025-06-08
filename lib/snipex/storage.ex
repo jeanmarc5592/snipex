@@ -111,7 +111,7 @@ defmodule Snipex.Storage do
     - `{:ok, updated_entry}` on success
     - `{:error, :not_found}` if the entry ID is not found
   """
-  @spec edit(String.t(), [{:name | :code, String.t()}], :snippets) ::
+  @spec edit(String.t(), [{:name | :code | :tag, String.t() | nil}], :snippets) ::
           {:ok, Snipex.Snippet.t()} | {:error, :not_found}
   def edit(id, updates, :snippets) when is_binary(id) and is_list(updates) do
     edit_data(id, updates, snippets_path(), :snippet)
@@ -170,7 +170,7 @@ defmodule Snipex.Storage do
   Deletes an existing entry (`:snippets` or `:tags`) by ID.
 
   When deleting a tag, the operation will fail if any snippet is currently associated with it,
-  unless a force-delete is wanted through the "--force" switch.
+  unless a force-delete is wanted through the "force: true" option.
 
   ## Parameters
 
@@ -191,7 +191,7 @@ defmodule Snipex.Storage do
   @spec delete_by_id(String.t(), :tags) :: {:ok, Snipex.Tag.t()} | {:error, :not_found | :in_use}
   def delete_by_id(id, :tags) when is_binary(id) do
     with {:ok, tag} <- find_data_by_id(id, tags_path(), :tag),
-         {:ok, snippets} when snippets == nil <- find_snippets_by_tag(tag.name) do
+         {:ok, snippets} when snippets == [] <- find_snippets_by_tag(tag.name) do
       delete_data_by_id(id, tags_path(), :tags)
     else
       {:error, :not_found} ->
@@ -200,6 +200,23 @@ defmodule Snipex.Storage do
       _snippets ->
         IO.puts("❌ Deletion denied. The tag with id '#{id}' is in use.")
         {:error, :in_use}
+    end
+  end
+
+  @spec delete_by_id(String.t(), :tags, force: true) ::
+          {:ok, Snipex.Tag.t()} | {:error, :not_found}
+  def delete_by_id(id, :tags, force: true) when is_binary(id) do
+    with {:ok, tag} <- find_data_by_id(id, tags_path(), :tag),
+         {:ok, snippets} <- find_snippets_by_tag(tag.name) do
+      Enum.each(snippets, fn %{id: id} ->
+        _ = Snipex.Storage.edit(id, [tag: nil], :snippets)
+      end)
+
+      delete_data_by_id(id, tags_path(), :tags)
+
+      {:ok, tag}
+    else
+      {:error, :not_found} -> {:error, :not_found}
     end
   end
 
@@ -269,13 +286,12 @@ defmodule Snipex.Storage do
   @doc false
   @spec find_snippets_by_tag(String.t()) :: {:ok, list() | nil}
   defp find_snippets_by_tag(tag) do
-    existing_data =
+    snippets =
       snippets_path()
       |> File.read!()
       |> Jason.decode!()
       |> Enum.map(fn item -> atomize_keys(item) end)
-
-    snippets = Enum.find(existing_data, fn snippet -> snippet.tag == tag end)
+      |> Enum.filter(fn snippet -> snippet.tag == tag end)
 
     {:ok, snippets}
   end
@@ -303,7 +319,7 @@ defmodule Snipex.Storage do
   end
 
   @doc false
-  @spec edit_data(String.t(), [{atom(), String.t()}], String.t(), atom()) ::
+  @spec edit_data(String.t(), [{atom(), String.t() | nil}], String.t(), atom()) ::
           {:ok, map()} | {:error, :not_found}
   defp edit_data(id, updates, file, type)
        when is_binary(id) and is_list(updates) and is_binary(file) and is_atom(type) do
@@ -320,7 +336,17 @@ defmodule Snipex.Storage do
 
       index ->
         original_item = Enum.at(existing_data, index)
-        updated_item = Map.merge(original_item, Map.new(updates))
+
+        update_map =
+          Enum.reduce(updates, %{}, fn
+            {key, value}, acc when is_atom(key) and (is_binary(value) or is_nil(value)) ->
+              Map.put(acc, key, value)
+
+            _, acc ->
+              acc
+          end)
+
+        updated_item = Map.merge(original_item, update_map)
         updated_list = List.replace_at(existing_data, index, updated_item)
 
         json = Jason.encode!(updated_list, pretty: true)
