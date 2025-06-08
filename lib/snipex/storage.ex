@@ -167,16 +167,40 @@ defmodule Snipex.Storage do
   end
 
   @doc """
-  Deletes a snippet by ID.
+  Deletes an existing entry (`:snippets` or `:tags`) by ID.
+
+  When deleting a tag, the operation will fail if any snippet is currently associated with it,
+  unless a force-delete is wanted through the "--force" switch.
+
+  ## Parameters
+
+    - `id`: The ID of the entry to delete
+    - `type`: Either `:snippets` or `:tags`, indicating the storage target
 
   ## Returns
 
-    - `{:ok, deleted_snippet}` if successful
-    - `{:error, :not_found}` if ID does not exist
+    - `{:ok, deleted_entry}` on success
+    - `{:error, :not_found}` if the entry ID is not found
+    - `{:error, :in_use}` if trying to delete a tag that is still used by snippets (only applies to `:tags`)
   """
   @spec delete_by_id(String.t(), :snippets) :: {:ok, Snipex.Snippet.t()} | {:error, :not_found}
   def delete_by_id(id, :snippets) when is_binary(id) do
     delete_data_by_id(id, snippets_path(), :snippet)
+  end
+
+  @spec delete_by_id(String.t(), :tags) :: {:ok, Snipex.Tag.t()} | {:error, :not_found | :in_use}
+  def delete_by_id(id, :tags) when is_binary(id) do
+    with {:ok, tag} <- find_data_by_id(id, tags_path(), :tag),
+         {:ok, snippets} when snippets == nil <- find_snippets_by_tag(tag.name) do
+      delete_data_by_id(id, tags_path(), :tags)
+    else
+      {:error, :not_found} ->
+        {:error, :not_found}
+
+      _snippets ->
+        IO.puts("❌ Deletion denied. The tag with id '#{id}' is in use.")
+        {:error, :in_use}
+    end
   end
 
   @doc """
@@ -240,6 +264,20 @@ defmodule Snipex.Storage do
         item = Enum.at(existing_data, index)
         {:ok, item}
     end
+  end
+
+  @doc false
+  @spec find_snippets_by_tag(String.t()) :: {:ok, list() | nil}
+  defp find_snippets_by_tag(tag) do
+    existing_data =
+      snippets_path()
+      |> File.read!()
+      |> Jason.decode!()
+      |> Enum.map(fn item -> atomize_keys(item) end)
+
+    snippets = Enum.find(existing_data, fn snippet -> snippet.tag == tag end)
+
+    {:ok, snippets}
   end
 
   @doc false
