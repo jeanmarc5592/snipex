@@ -143,15 +143,22 @@ defmodule Snipex.Storage do
   @doc """
   Filters snippets by a given tag.
 
+  Use `"untagged"` as the tag to retrieve all snippets without a tag.
+
   ## Parameters
 
-    - `tag`: The tag name to filter snippets by.
+    - `tag`: The tag name or `"untagged"` to filter by.
     - `:snippets`: Indicates the type of data to filter.
 
   ## Returns
 
-    - `{:ok, snippets}`: A list of snippets that are associated with the given tag.
+    - `{:ok, snippets}`: A list of matching snippets
   """
+  @spec filter_by(String.t(), :snippets) :: {:ok, [Snipex.Snippet.t()]}
+  def filter_by("untagged", :snippets) do
+    find_snippets_by_tag(nil)
+  end
+
   @spec filter_by(String.t(), :snippets) :: {:ok, [Snipex.Snippet.t()]}
   def filter_by(tag, :snippets) when is_binary(tag) do
     find_snippets_by_tag(tag)
@@ -307,7 +314,7 @@ defmodule Snipex.Storage do
   end
 
   @doc false
-  @spec find_snippets_by_tag(String.t()) :: {:ok, list()}
+  @spec find_snippets_by_tag(String.t() | nil) :: {:ok, list()}
   defp find_snippets_by_tag(tag) do
     snippets =
       snippets_path()
