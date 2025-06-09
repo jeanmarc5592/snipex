@@ -28,7 +28,7 @@ defmodule Snipex.Printer do
 
     list
     |> Enum.with_index()
-    |> Enum.each(fn {%{"id" => id, "name" => name, "tag" => tag}, index} ->
+    |> Enum.each(fn {%{:id => id, :name => name, :tag => tag}, index} ->
       IO.puts("#{id} | #{String.pad_trailing(name, 20)} | #{String.pad_trailing(tag || "—", 8)}")
       if index < total_length - 1, do: IO.puts(String.duplicate("-", 100))
     end)
@@ -42,7 +42,7 @@ defmodule Snipex.Printer do
 
     list
     |> Enum.with_index()
-    |> Enum.each(fn {%{"id" => id, "name" => name}, index} ->
+    |> Enum.each(fn {%{:id => id, :name => name}, index} ->
       IO.puts("#{id} | #{String.pad_trailing(name, 14)}")
       if index < total_length - 1, do: IO.puts(String.duplicate("-", 80))
     end)

@@ -87,6 +87,15 @@ defmodule Snipex.Commands.Snippet do
     Printer.print_list(snippets, :snippets)
   end
 
+  def handle(["list" | opts]) when is_list(opts) do
+    optional_switches = [tag: :string]
+
+    with {:ok, [tag: tag]} <- UserInput.validate_switches(opts, optional: optional_switches),
+         {:ok, snippets} <- Storage.filter_by(tag, :snippets) do
+      Printer.print_list(snippets, :snippets)
+    end
+  end
+
   def handle(["show" | [id]]) when is_binary(id) do
     if UserInput.valid_uuid?(id) do
       case Storage.find_by_id(id, :snippets) do

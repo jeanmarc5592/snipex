@@ -141,6 +141,23 @@ defmodule Snipex.Storage do
   end
 
   @doc """
+  Filters snippets by a given tag.
+
+  ## Parameters
+
+    - `tag`: The tag name to filter snippets by.
+    - `:snippets`: Indicates the type of data to filter.
+
+  ## Returns
+
+    - `{:ok, snippets}`: A list of snippets that are associated with the given tag.
+  """
+  @spec filter_by(String.t(), :snippets) :: {:ok, [Snipex.Snippet.t()]}
+  def filter_by(tag, :snippets) when is_binary(tag) do
+    find_snippets_by_tag(tag)
+  end
+
+  @doc """
   Finds a snippet by its ID.
 
   ## Returns
@@ -245,6 +262,7 @@ defmodule Snipex.Storage do
     file
     |> File.read!()
     |> Jason.decode!()
+    |> Enum.map(fn item -> atomize_keys(item) end)
   end
 
   @doc false
@@ -289,7 +307,7 @@ defmodule Snipex.Storage do
   end
 
   @doc false
-  @spec find_snippets_by_tag(String.t()) :: {:ok, list() | nil}
+  @spec find_snippets_by_tag(String.t()) :: {:ok, list()}
   defp find_snippets_by_tag(tag) do
     snippets =
       snippets_path()
