@@ -120,7 +120,19 @@ defmodule Snipex.Storage do
   @spec edit(String.t(), [{:name, String.t()}], :tags) ::
           {:ok, Snipex.Tag.t()} | {:error, :not_found}
   def edit(id, updates, :tags) when is_binary(id) and is_list(updates) do
-    edit_data(id, updates, tags_path(), :tag)
+    with {:ok, tag} <- find_data_by_id(id, tags_path(), :tag),
+         {:ok, snippets} <- find_snippets_by_tag(tag.name) do
+      new_name = Keyword.get(updates, :name, tag.name)
+
+      Enum.each(snippets, fn %{id: id} ->
+        _ = Snipex.Storage.edit(id, [tag: new_name], :snippets)
+      end)
+
+      edit_data(id, updates, tags_path(), :tag)
+    else
+      {:error, :not_found} ->
+        {:error, :not_found}
+    end
   end
 
   @doc """
