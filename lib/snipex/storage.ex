@@ -114,7 +114,16 @@ defmodule Snipex.Storage do
   @spec edit(String.t(), [{:name | :code | :tag, String.t() | nil}], :snippets) ::
           {:ok, Snipex.Snippet.t()} | {:error, :not_found}
   def edit(id, updates, :snippets) when is_binary(id) and is_list(updates) do
-    edit_data(id, updates, snippets_path(), :snippet)
+    case Keyword.get(updates, :tag) do
+      nil ->
+        edit_data(id, updates, snippets_path(), :snippet)
+
+      tag_name when is_binary(tag_name) ->
+        case find_by_name(tag_name, :tags) do
+          {:ok, _tag} -> edit_data(id, updates, snippets_path(), :snippet)
+          {:error, :not_found} -> {:error, :not_found}
+        end
+    end
   end
 
   @spec edit(String.t(), [{:name, String.t()}], :tags) ::

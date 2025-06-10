@@ -46,7 +46,7 @@ defmodule Snipex.Commands.Snippet do
   end
 
   def handle(["edit" | [id | opts]]) when is_binary(id) and is_list(opts) do
-    optional_switches = [name: :string, code: :string]
+    optional_switches = [name: :string, code: :string, tag: :string]
 
     with true <- UserInput.valid_uuid?(id),
          {:ok, updates} <- UserInput.validate_switches(opts, optional: optional_switches),
